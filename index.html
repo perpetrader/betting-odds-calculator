@@ -666,18 +666,28 @@
     return -100 / r;                    // favorite, negative
   }
 
+  // Format a number to `decimals` places, then strip trailing zeros after
+  // the decimal point (so 3.00 -> 3, 3.50 -> 3.5, 3.55 -> 3.55).
+  function fmtNum(n, decimals) {
+    let s = n.toFixed(decimals);
+    if (s.includes('.')) {
+      s = s.replace(/0+$/, '').replace(/\.$/, '');
+    }
+    return s;
+  }
+
   function formatRatio(r, decimals = 2) {
     if (r == null) return '—';
     if (r >= 1) {
-      return `${r.toFixed(decimals)}:1`;
+      return `${fmtNum(r, decimals)}:1`;
     }
-    return `1:${(1 / r).toFixed(decimals)}`;
+    return `1:${fmtNum(1 / r, decimals)}`;
   }
 
   function formatAmerican(a) {
     if (a == null) return '—';
     const sign = a >= 0 ? '+' : '−';
-    return `${sign}${Math.abs(a).toFixed(1)}`;
+    return `${sign}${fmtNum(Math.abs(a), 1)}`;
   }
 
   // Round helper: round X (the variable side of the ratio) to a step
