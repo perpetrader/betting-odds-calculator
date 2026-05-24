@@ -226,17 +226,18 @@
     flex-direction: column;
     gap: 2px;
   }
-  .odds-american {
+  .odds-ratio {
     font-family: 'Consolas', 'Courier New', monospace;
     font-weight: 600;
+    font-size: 15px;
     color: var(--text);
   }
-  .odds-american.plus { color: var(--success); }
-  .odds-american.minus { color: var(--danger); }
-  .odds-ratio {
+  .odds-american {
     font-size: 11px;
     color: var(--text-dim);
   }
+  .odds-american.plus { color: var(--success); }
+  .odds-american.minus { color: var(--danger); }
   .col-divider { border-left: 2px solid var(--border); }
   th.col-divider, td.col-divider { padding-left: 18px; }
   .muted { color: var(--text-dim); font-style: italic; }
@@ -291,7 +292,7 @@
     <div class="control-group">
       <label for="edgeInput">Edge factor (1.00 = fair, up to 3.00)</label>
       <input id="edgeInput" type="number" min="1" max="3" step="0.01" value="1.10">
-      <div class="help">Fair payout is divided by this factor. e.g. fair +400 with edge 1.10 → ≈ +364.</div>
+      <div class="help">Fair payout is divided by this factor. e.g. fair 4:1 with edge 1.10 → ≈ 3.6:1.</div>
     </div>
 
     <div class="section-title" style="margin-top:20px;">Actions</div>
@@ -330,9 +331,9 @@
       </table>
     </div>
     <div class="legend">
-      <span><strong style="color:var(--success);">+XXX</strong> = bet 100 to win XXX (underdog)</span>
-      <span><strong style="color:var(--danger);">-XXX</strong> = bet XXX to win 100 (favorite)</span>
-      <span>Ratio shown as bet:win.</span>
+      <span><strong>X:1</strong> = bet 1 to win X (underdog)</span>
+      <span><strong>1:Y</strong> = bet Y to win 1 (favorite)</span>
+      <span>American odds (<span style="color:var(--success);">+</span>/<span style="color:var(--danger);">−</span>) shown beneath each ratio.</span>
     </div>
   </main>
 </div>
@@ -436,12 +437,12 @@
     return -100 / r;                    // favorite, negative
   }
 
-  function formatRatio(r) {
+  function formatRatio(r, decimals = 2) {
     if (r == null) return '—';
     if (r >= 1) {
-      return `${r.toFixed(2)}:1`;
+      return `${r.toFixed(decimals)}:1`;
     }
-    return `1:${(1 / r).toFixed(2)}`;
+    return `1:${(1 / r).toFixed(decimals)}`;
   }
 
   function formatAmerican(a) {
@@ -510,7 +511,7 @@
       const tdFair = document.createElement('td');
       tdFair.className = 'col-divider';
       const fairR = fairOdds(p);
-      tdFair.appendChild(buildOddsCell(fairR));
+      tdFair.appendChild(buildOddsCell(fairR, 2));
       tr.appendChild(tdFair);
 
       // Book odds — to nearest 0.1
@@ -518,20 +519,20 @@
       tdBook01.className = 'col-divider';
       const bookR = fairR == null ? null : fairR / edge;
       const bookR01 = bookR == null ? null : roundedRatioByStep(bookR, 0.1);
-      tdBook01.appendChild(buildOddsCell(bookR01));
+      tdBook01.appendChild(buildOddsCell(bookR01, 1));
       tr.appendChild(tdBook01);
 
       // Book odds — to nearest 0.5
       const tdBook05 = document.createElement('td');
       const bookR05 = bookR == null ? null : roundedRatioByStep(bookR, 0.5);
-      tdBook05.appendChild(buildOddsCell(bookR05));
+      tdBook05.appendChild(buildOddsCell(bookR05, 1));
       tr.appendChild(tdBook05);
 
       tbody.appendChild(tr);
     });
   }
 
-  function buildOddsCell(r) {
+  function buildOddsCell(r, decimals = 2) {
     const wrap = document.createElement('div');
     wrap.className = 'odds-pair';
     if (r == null) {
@@ -542,14 +543,14 @@
       return wrap;
     }
     const american = americanFromRatio(r);
+    const ratioEl = document.createElement('span');
+    ratioEl.className = 'odds-ratio';
+    ratioEl.textContent = formatRatio(r, decimals);
     const amEl = document.createElement('span');
     amEl.className = 'odds-american ' + (american >= 0 ? 'plus' : 'minus');
     amEl.textContent = formatAmerican(american);
-    const ratioEl = document.createElement('span');
-    ratioEl.className = 'odds-ratio';
-    ratioEl.textContent = formatRatio(r);
-    wrap.appendChild(amEl);
     wrap.appendChild(ratioEl);
+    wrap.appendChild(amEl);
     return wrap;
   }
 
