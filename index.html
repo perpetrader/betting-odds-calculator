@@ -556,9 +556,9 @@
   }
 
   // --- Probability calculation ---
-  function impliedProbabilities() {
-    // Returns array of probabilities (0-1) for each team. May not sum to 1.
-    let base;
+  // Base probability from the user's ratings or win-% input. Used for
+  // the implied-% column and the fair odds.
+  function baseProbabilities() {
     if (state.mode === 'rating') {
       const nums = state.ratings.map(v => {
         const trimmed = (v ?? '').toString().trim();
@@ -567,19 +567,20 @@
         return (isNaN(n) || n <= 0) ? 0 : n;
       });
       const sum = nums.reduce((a, b) => a + b, 0);
-      base = sum <= 0 ? TEAMS.map(() => null) : nums.map(n => n / sum);
-    } else {
-      base = state.percents.map(v => {
-        const n = parseFloat(v);
-        if (isNaN(n) || n <= 0) return null;
-        return n / 100;
-      });
+      return sum <= 0 ? TEAMS.map(() => null) : nums.map(n => n / sum);
     }
+    return state.percents.map(v => {
+      const n = parseFloat(v);
+      if (isNaN(n) || n <= 0) return null;
+      return n / 100;
+    });
+  }
 
-    // Apply money-bet adjustment: for each $X bet on a team, that team's
-    // % goes up by 1 and every other team's % goes down by 0.125. The
-    // self-adjustment combines to +1.125% on the team minus 0.125% of
-    // total-bets-as-units applied uniformly.
+  // Apply the wager adjustment: for each $X bet on a team, that team's
+  // % goes up by 1 and every other team's % goes down by 0.125. The
+  // self-adjustment combines to +1.125% on the team minus 0.125% of
+  // total-bets-as-units applied uniformly. Used for the book odds.
+  function applyWagerAdjustment(base) {
     const X = parseFloat(state.xPerPercent);
     if (isNaN(X) || X <= 0) return base;
     const bets = state.bets.map(v => {
@@ -645,7 +646,8 @@
 
   // --- Render results ---
   function renderResults() {
-    const probs = impliedProbabilities();
+    const baseProbs = baseProbabilities();
+    const adjProbs = applyWagerAdjustment(baseProbs);
     const edge = Math.max(1, Math.min(3, parseFloat(state.edge) || 1));
 
     const tbody = document.getElementById('resultsBody');
@@ -671,23 +673,26 @@
       }
       tr.appendChild(tdInput);
 
-      const p = probs[i];
+      const pBase = baseProbs[i];
+      const pAdj = adjProbs[i];
 
-      // Implied %
+      // Implied % — based on inputs only (fair-odds basis)
       const tdProb = document.createElement('td');
       tdProb.className = 'prob-cell';
-      tdProb.textContent = (p == null) ? '—' : `${(p * 100).toFixed(1)}%`;
+      tdProb.textContent = (pBase == null) ? '—' : `${(pBase * 100).toFixed(1)}%`;
       tr.appendChild(tdProb);
 
-      // Fair odds
+      // Fair odds — from base probability (inputs only)
       const tdFair = document.createElement('td');
       tdFair.className = 'col-divider';
-      const fairR = fairOdds(p);
+      const fairR = fairOdds(pBase);
       tdFair.appendChild(buildOddsCell(fairR, 2));
       tr.appendChild(tdFair);
 
-      // Book odds — rounded to nearest 0.5
-      const bookR = fairR == null ? null : fairR / edge;
+      // Book odds — from wager-adjusted probability, divided by edge,
+      // rounded to nearest 0.5
+      const adjFairR = fairOdds(pAdj);
+      const bookR = adjFairR == null ? null : adjFairR / edge;
       const bookR05 = bookR == null ? null : roundedRatioByStep(bookR, 0.5);
       const tdBook05 = document.createElement('td');
       tdBook05.className = 'col-divider';
