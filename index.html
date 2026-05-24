@@ -5,21 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a1b2e">
-<title>Basketball Tournament Betting Odds Calculator</title>
+<meta name="theme-color" content="#0d1a2e">
+<title>BPS XIX • Betting Odds Calculator</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <style>
   :root {
-    --bg: #1a1b2e;
-    --panel: #232440;
-    --card: #2d2f54;
-    --accent: #6c5ce7;
-    --accent2: #00cec9;
-    --text: #dfe6e9;
-    --text-dim: #a0a4b8;
+    --bg: #0d1a2e;
+    --panel: #152540;
+    --card: #1f3052;
+    --accent: #5b8cd6;
+    --accent2: #5fd4d4;
+    --text: #e8eef5;
+    --text-dim: #8fa2bd;
     --danger: #e17055;
-    --success: #00b894;
-    --border: #3d3f6a;
-    --input-bg: #1e1f3a;
+    --success: #2dd4a4;
+    --border: #2a3a5a;
+    --input-bg: #0d1c33;
+    --logo-navy: #1d2e50;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -29,13 +32,36 @@
     min-height: 100vh;
   }
   header {
-    background: linear-gradient(135deg, #2d2f54 0%, #1a1b2e 100%);
+    background: linear-gradient(135deg, #1f3052 0%, #0d1a2e 100%);
     border-bottom: 2px solid var(--accent);
-    padding: 16px 24px;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 4px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  }
+  .logo-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
   header h1 {
+    font-family: 'Georgia', 'Times New Roman', serif;
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
   header .sub {
     font-size: 13px;
@@ -136,7 +162,7 @@
     align-items: center;
   }
   .total-bar.over { border-color: var(--danger); background: rgba(225, 112, 85, 0.15); }
-  .total-bar.exact { border-color: var(--success); background: rgba(0, 184, 148, 0.12); }
+  .total-bar.exact { border-color: var(--success); background: rgba(45, 212, 164, 0.12); }
   .total-bar strong { font-size: 15px; }
   .total-message {
     font-size: 12px;
@@ -230,7 +256,7 @@
     vertical-align: middle;
   }
   table.results tr:last-child td { border-bottom: none; }
-  table.results tr:hover td { background: rgba(108, 92, 231, 0.06); }
+  table.results tr:hover td { background: rgba(91, 140, 214, 0.07); }
   .team-cell { font-weight: 600; color: var(--text); }
   .prob-cell { color: var(--accent2); font-weight: 600; }
   .odds-pair {
@@ -277,7 +303,7 @@
     cursor: pointer;
     font-weight: 500;
   }
-  .btn:hover { border-color: var(--accent); background: #353766; }
+  .btn:hover { border-color: var(--accent); background: #284070; }
   .btn-block { width: 100%; justify-content: center; }
 
   /* Safe-area padding for iPhone notch/home indicator */
@@ -288,9 +314,10 @@
 
   /* --- Mobile (phones, portrait) --- */
   @media (max-width: 768px) {
-    header { padding: 12px 16px; }
+    header { padding: 12px 16px; gap: 12px; }
     header h1 { font-size: 18px; }
     header .sub { font-size: 11px; }
+    .logo-badge { width: 44px; height: 44px; padding: 3px; }
 
     .layout {
       grid-template-columns: 1fr;
@@ -326,7 +353,7 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
-    table.results { font-size: 12px; min-width: 560px; }
+    table.results { font-size: 12px; min-width: 460px; }
     table.results th,
     table.results td { padding: 10px 10px; }
     th.col-divider, td.col-divider { padding-left: 12px; }
@@ -349,8 +376,13 @@
 <body>
 
 <header>
-  <h1>Basketball Tournament Betting Odds Calculator</h1>
-  <div class="sub">9-team tournament • Calculates fair odds and book-adjusted offered odds</div>
+  <div class="logo-badge">
+    <img src="logo.png" alt="BPS XIX">
+  </div>
+  <div class="header-text">
+    <h1>BPS XIX Betting Odds</h1>
+    <div class="sub">9-team basketball tournament • Fair odds and book-adjusted offered odds</div>
+  </div>
 </header>
 
 <div class="layout">
@@ -400,8 +432,7 @@
             <th>Input</th>
             <th>Implied Win %</th>
             <th class="col-divider">Fair Odds</th>
-            <th class="col-divider">Book Odds<br><span style="font-weight:400;text-transform:none;color:var(--text-dim);">(to nearest 0.1)</span></th>
-            <th>Book Odds<br><span style="font-weight:400;text-transform:none;color:var(--text-dim);">(rounded to nearest 0.5)</span></th>
+            <th class="col-divider">Book Odds<br><span style="font-weight:400;text-transform:none;color:var(--text-dim);">(rounded to nearest 0.5)</span></th>
           </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
@@ -597,25 +628,19 @@
       tdFair.appendChild(buildOddsCell(fairR, 2));
       tr.appendChild(tdFair);
 
-      // Book odds — to nearest 0.1
-      const tdBook01 = document.createElement('td');
-      tdBook01.className = 'col-divider';
+      // Book odds — rounded to nearest 0.5
       const bookR = fairR == null ? null : fairR / edge;
-      const bookR01 = bookR == null ? null : roundedRatioByStep(bookR, 0.1);
-      tdBook01.appendChild(buildOddsCell(bookR01, 1));
-      tr.appendChild(tdBook01);
-
-      // Book odds — to nearest 0.5
-      const tdBook05 = document.createElement('td');
       const bookR05 = bookR == null ? null : roundedRatioByStep(bookR, 0.5);
+      const tdBook05 = document.createElement('td');
+      tdBook05.className = 'col-divider';
       tdBook05.appendChild(buildOddsCell(bookR05, 1));
       tr.appendChild(tdBook05);
 
-      // Mirror the 0.1-rounded book odds inline with the team input
+      // Mirror the 0.5-rounded book odds inline with the team input
       const inlineEl = document.getElementById(`inline-odds-${i}`);
       if (inlineEl) {
         inlineEl.innerHTML = '';
-        if (bookR01 != null) inlineEl.appendChild(buildOddsCell(bookR01, 1));
+        if (bookR05 != null) inlineEl.appendChild(buildOddsCell(bookR05, 1));
       }
 
       tbody.appendChild(tr);
