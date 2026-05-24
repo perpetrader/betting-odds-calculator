@@ -180,7 +180,7 @@
   }
   .team-input-row {
     display: grid;
-    grid-template-columns: 1fr auto 90px;
+    grid-template-columns: 1fr auto 80px 100px;
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
@@ -227,6 +227,20 @@
     pointer-events: none;
   }
   .input-suffix input { padding-right: 22px; }
+  .input-prefix {
+    position: relative;
+  }
+  .input-prefix::before {
+    content: attr(data-prefix);
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .input-prefix input { padding-left: 18px; }
 
   /* Output */
   .results-table-wrap {
@@ -340,7 +354,7 @@
 
     /* Tighter team-input rows but still readable */
     .team-input-row {
-      grid-template-columns: minmax(0, 1fr) auto 78px;
+      grid-template-columns: minmax(0, 1fr) auto 68px 80px;
       gap: 8px;
       padding: 10px 10px;
     }
@@ -364,7 +378,7 @@
   /* Even tighter for very narrow phones (iPhone SE / 13 mini) */
   @media (max-width: 380px) {
     .team-input-row {
-      grid-template-columns: minmax(0, 1fr) auto 70px;
+      grid-template-columns: minmax(0, 1fr) auto 56px 70px;
       gap: 6px;
       padding: 9px 8px;
     }
@@ -397,11 +411,16 @@
       Rate each team 1 (worst) to 5 (best). Blank teams default to a rating of 3. Probabilities are normalized from the ratings.
     </div>
 
-    <div class="section-title" style="margin-top:20px;">Book Edge</div>
+    <div class="section-title" style="margin-top:20px;">Book Settings</div>
     <div class="control-group">
       <label for="edgeInput">Edge factor (1.00 = fair, up to 3.00)</label>
       <input id="edgeInput" type="number" min="1" max="3" step="0.01" value="1.50">
       <div class="help">Fair payout is divided by this factor. e.g. fair 4:1 with edge 1.50 → ≈ 2.7:1.</div>
+    </div>
+    <div class="control-group">
+      <label for="xPerPercentInput">$ per 1% line shift</label>
+      <input id="xPerPercentInput" type="number" min="1" step="any" value="100">
+      <div class="help">For every $X bet on a team, that team's win % rises by 1 and every other team's drops by 0.125.</div>
     </div>
 
     <div class="section-title" style="margin-top:20px;">Actions</div>
@@ -462,8 +481,10 @@
   const state = {
     mode: 'rating', // 'rating' | 'percent'
     edge: 1.50,
+    xPerPercent: 100,
     ratings: TEAMS.map(() => ''),   // strings so empty is allowed
-    percents: TEAMS.map(() => '')
+    percents: TEAMS.map(() => ''),
+    bets: TEAMS.map(() => '')
   };
 
   // --- Rendering: team inputs ---
@@ -509,9 +530,27 @@
       });
 
       inputWrap.appendChild(input);
+
+      const betWrap = document.createElement('div');
+      betWrap.className = 'input-prefix';
+      betWrap.dataset.prefix = '$';
+      const betInput = document.createElement('input');
+      betInput.type = 'number';
+      betInput.min = 0;
+      betInput.step = 'any';
+      betInput.value = state.bets[i];
+      betInput.placeholder = '0';
+      betInput.inputMode = 'decimal';
+      betInput.addEventListener('input', (e) => {
+        state.bets[i] = e.target.value;
+        update();
+      });
+      betWrap.appendChild(betInput);
+
       row.appendChild(nameEl);
       row.appendChild(inlineOdds);
       row.appendChild(inputWrap);
+      row.appendChild(betWrap);
       wrap.appendChild(row);
     });
   }
@@ -519,6 +558,7 @@
   // --- Probability calculation ---
   function impliedProbabilities() {
     // Returns array of probabilities (0-1) for each team. May not sum to 1.
+    let base;
     if (state.mode === 'rating') {
       const nums = state.ratings.map(v => {
         const trimmed = (v ?? '').toString().trim();
@@ -527,16 +567,32 @@
         return (isNaN(n) || n <= 0) ? 0 : n;
       });
       const sum = nums.reduce((a, b) => a + b, 0);
-      if (sum <= 0) return TEAMS.map(() => null);
-      return nums.map(n => n / sum);
+      base = sum <= 0 ? TEAMS.map(() => null) : nums.map(n => n / sum);
     } else {
-      // percent mode
-      return state.percents.map(v => {
+      base = state.percents.map(v => {
         const n = parseFloat(v);
         if (isNaN(n) || n <= 0) return null;
         return n / 100;
       });
     }
+
+    // Apply money-bet adjustment: for each $X bet on a team, that team's
+    // % goes up by 1 and every other team's % goes down by 0.125. The
+    // self-adjustment combines to +1.125% on the team minus 0.125% of
+    // total-bets-as-units applied uniformly.
+    const X = parseFloat(state.xPerPercent);
+    if (isNaN(X) || X <= 0) return base;
+    const bets = state.bets.map(v => {
+      const n = parseFloat(v);
+      return (isNaN(n) || n < 0) ? 0 : n;
+    });
+    const totalUnits = bets.reduce((a, b) => a + b, 0) / X;
+    if (totalUnits === 0) return base;
+    return base.map((p, i) => {
+      if (p == null) return p;
+      const adjPct = 1.125 * (bets[i] / X) - 0.125 * totalUnits;
+      return p + adjPct / 100;
+    });
   }
 
   // --- Odds math ---
@@ -743,9 +799,15 @@
     renderResults();
   });
 
+  document.getElementById('xPerPercentInput').addEventListener('input', (e) => {
+    state.xPerPercent = parseFloat(e.target.value);
+    update();
+  });
+
   document.getElementById('resetBtn').addEventListener('click', () => {
     state.ratings = TEAMS.map(() => '');
     state.percents = TEAMS.map(() => '');
+    state.bets = TEAMS.map(() => '');
     renderTeamInputs();
     update();
   });
