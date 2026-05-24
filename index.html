@@ -394,7 +394,7 @@
       <button data-mode="percent">Win % (0-100)</button>
     </div>
     <div class="help" id="modeHelp" style="margin-top:8px;">
-      Rate each team 1 (worst) to 5 (best). Probabilities are normalized from the ratings.
+      Rate each team 1 (worst) to 5 (best). Blank teams default to a rating of 3. Probabilities are normalized from the ratings.
     </div>
 
     <div class="section-title" style="margin-top:20px;">Book Edge</div>
@@ -521,7 +521,9 @@
     // Returns array of probabilities (0-1) for each team. May not sum to 1.
     if (state.mode === 'rating') {
       const nums = state.ratings.map(v => {
-        const n = parseFloat(v);
+        const trimmed = (v ?? '').toString().trim();
+        if (trimmed === '') return 3; // blank defaults to mid-scale rating
+        const n = parseFloat(trimmed);
         return (isNaN(n) || n <= 0) ? 0 : n;
       });
       const sum = nums.reduce((a, b) => a + b, 0);
@@ -728,7 +730,7 @@
     });
     document.getElementById('modeHelp').textContent =
       mode === 'rating'
-        ? 'Rate each team 1 (worst) to 5 (best). Probabilities are normalized from the ratings.'
+        ? 'Rate each team 1 (worst) to 5 (best). Blank teams default to a rating of 3. Probabilities are normalized from the ratings.'
         : 'Enter the win probability for each team. Total must not exceed 100%.';
     renderTeamInputs();
     update();
