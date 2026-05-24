@@ -497,6 +497,52 @@
     bets: TEAMS.map(() => '')
   };
 
+  // --- Persistence ---
+  const STORAGE_KEY = 'bps-xix-odds-state-v1';
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        mode: state.mode,
+        edge: state.edge,
+        xPerPercent: state.xPerPercent,
+        ratings: state.ratings,
+        percents: state.percents,
+        bets: state.bets
+      }));
+    } catch (e) { /* localStorage unavailable; carry on */ }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.mode === 'rating' || s.mode === 'percent') state.mode = s.mode;
+      if (typeof s.edge === 'number' && !isNaN(s.edge)) state.edge = s.edge;
+      if (typeof s.xPerPercent === 'number' && !isNaN(s.xPerPercent)) state.xPerPercent = s.xPerPercent;
+      const sameLen = a => Array.isArray(a) && a.length === TEAMS.length;
+      if (sameLen(s.ratings)) state.ratings = s.ratings.map(v => v ?? '');
+      if (sameLen(s.percents)) state.percents = s.percents.map(v => v ?? '');
+      if (sameLen(s.bets)) state.bets = s.bets.map(v => v ?? '');
+    } catch (e) { /* corrupted entry; ignore */ }
+  }
+
+  function modeHelpText() {
+    return state.mode === 'rating'
+      ? 'Rate each team 1 (worst) to 5 (best). Blank teams default to a rating of 3. Probabilities are normalized from the ratings.'
+      : 'Enter the win probability for each team. Total must not exceed 100%.';
+  }
+
+  function syncControlsFromState() {
+    document.getElementById('edgeInput').value = state.edge;
+    document.getElementById('xPerPercentInput').value = state.xPerPercent;
+    document.querySelectorAll('#modeToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === state.mode);
+    });
+    document.getElementById('modeHelp').textContent = modeHelpText();
+  }
+
   // --- Rendering: team inputs ---
   function renderTeamInputs() {
     const wrap = document.getElementById('teamInputs');
@@ -787,6 +833,7 @@
   function update() {
     updateTotalAndErrors();
     renderResults();
+    saveState();
   }
 
   // --- Event wiring ---
@@ -799,10 +846,7 @@
     document.querySelectorAll('#modeToggle button').forEach(b => {
       b.classList.toggle('active', b.dataset.mode === mode);
     });
-    document.getElementById('modeHelp').textContent =
-      mode === 'rating'
-        ? 'Rate each team 1 (worst) to 5 (best). Blank teams default to a rating of 3. Probabilities are normalized from the ratings.'
-        : 'Enter the win probability for each team. Total must not exceed 100%.';
+    document.getElementById('modeHelp').textContent = modeHelpText();
     renderTeamInputs();
     update();
   });
@@ -812,6 +856,7 @@
     if (isNaN(v)) v = 1;
     state.edge = v;
     renderResults();
+    saveState();
   });
 
   document.getElementById('xPerPercentInput').addEventListener('input', (e) => {
@@ -828,6 +873,8 @@
   });
 
   // --- Init ---
+  loadState();
+  syncControlsFromState();
   renderTeamInputs();
   update();
 </script>
