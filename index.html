@@ -321,10 +321,14 @@
   .btn-block { width: 100%; justify-content: center; }
 
   /* Safe-area padding for iPhone notch/home indicator */
+  html, body { overflow-x: hidden; }
   body {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+  /* Stop iOS Safari's intrinsic min-width on number inputs from
+     forcing the grid tracks wider than the explicit column sizes. */
+  .team-input-row input { min-width: 0; }
 
   /* --- Mobile (phones, portrait) --- */
   @media (max-width: 768px) {
@@ -342,7 +346,7 @@
       border-bottom: 1px solid var(--border);
       padding: 14px 16px;
     }
-    .main { padding: 14px 16px env(safe-area-inset-bottom); }
+    .main { padding: 14px 12px env(safe-area-inset-bottom); }
 
     /* Bigger touch targets for mode toggle */
     .mode-toggle button { padding: 12px 8px; font-size: 14px; }
@@ -354,10 +358,15 @@
 
     /* Tighter team-input rows but still readable */
     .team-input-row {
-      grid-template-columns: minmax(0, 1fr) auto 68px 80px;
-      gap: 8px;
-      padding: 10px 10px;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 50px) minmax(0, 64px);
+      gap: 6px;
+      padding: 9px 8px;
     }
+    .team-input-row input { padding: 5px 6px; }
+    .input-prefix::before { left: 5px; font-size: 11px; }
+    .input-prefix input { padding-left: 14px; }
+    .input-suffix::after { right: 5px; font-size: 11px; }
+    .input-suffix input { padding-right: 16px; }
     .team-input-row .team-name { font-size: 13px; }
     .team-inline-odds .odds-ratio { font-size: 13px; }
     .team-inline-odds .odds-american { font-size: 10px; }
@@ -378,12 +387,12 @@
   /* Even tighter for very narrow phones (iPhone SE / 13 mini) */
   @media (max-width: 380px) {
     .team-input-row {
-      grid-template-columns: minmax(0, 1fr) auto 56px 70px;
-      gap: 6px;
-      padding: 9px 8px;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 44px) minmax(0, 56px);
+      gap: 4px;
+      padding: 8px 6px;
     }
     .team-input-row .team-name { font-size: 12px; }
-    .sidebar, .main { padding-left: 12px; padding-right: 12px; }
+    .sidebar, .main { padding-left: 10px; padding-right: 10px; }
   }
 </style>
 </head>
