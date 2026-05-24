@@ -419,7 +419,7 @@
     </div>
     <div class="control-group">
       <label for="xPerPercentInput">$ per 1% line shift</label>
-      <input id="xPerPercentInput" type="number" min="1" step="any" value="100">
+      <input id="xPerPercentInput" type="number" min="1" step="any" value="300">
       <div class="help">For every $X bet on a team, that team's win % rises by 1 and every other team's drops by 0.125.</div>
     </div>
 
@@ -481,7 +481,7 @@
   const state = {
     mode: 'rating', // 'rating' | 'percent'
     edge: 1.50,
-    xPerPercent: 100,
+    xPerPercent: 300,
     ratings: TEAMS.map(() => ''),   // strings so empty is allowed
     percents: TEAMS.map(() => ''),
     bets: TEAMS.map(() => '')
