@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basketball Tournament Betting Odds Calculator</title>
+<style>
+  :root {
+    --bg: #1a1b2e;
+    --panel: #232440;
+    --card: #2d2f54;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --text: #dfe6e9;
+    --text-dim: #a0a4b8;
+    --danger: #e17055;
+    --success: #00b894;
+    --border: #3d3f6a;
+    --input-bg: #1e1f3a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #2d2f54 0%, #1a1b2e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 24px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+  }
+  header .sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 80px);
+  }
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+  }
+  .main {
+    padding: 20px 24px;
+    overflow-x: auto;
+  }
+
+  .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title + .section-title { margin-top: 20px; }
+
+  .control-group { margin-bottom: 14px; }
+  .control-group label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .control-group input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .control-group input:focus { border-color: var(--accent); }
+  .help {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: flex;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .mode-toggle button {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .mode-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .mode-toggle button:not(.active):hover { color: var(--text); }
+
+  /* Total bar */
+  .total-bar {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-bar.over { border-color: var(--danger); background: rgba(225, 112, 85, 0.15); }
+  .total-bar.exact { border-color: var(--success); background: rgba(0, 184, 148, 0.12); }
+  .total-bar strong { font-size: 15px; }
+  .total-message {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 6px;
+    display: none;
+  }
+  .total-message.show { display: block; }
+
+  /* Team inputs */
+  .team-input-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .team-input-row {
+    display: grid;
+    grid-template-columns: 1fr 100px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .team-input-row .team-name { font-size: 14px; font-weight: 500; }
+  .team-input-row input {
+    padding: 6px 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    text-align: right;
+  }
+  .team-input-row input:focus { border-color: var(--accent); }
+  .team-input-row.input-error input {
+    border-color: var(--danger);
+    background: rgba(225, 112, 85, 0.15);
+  }
+  .input-suffix {
+    position: relative;
+  }
+  .input-suffix::after {
+    content: attr(data-suffix);
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .input-suffix input { padding-right: 22px; }
+
+  /* Output */
+  .results-table-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.results {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.results th {
+    background: var(--card);
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  table.results td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.results tr:last-child td { border-bottom: none; }
+  table.results tr:hover td { background: rgba(108, 92, 231, 0.06); }
+  .team-cell { font-weight: 600; color: var(--text); }
+  .prob-cell { color: var(--accent2); font-weight: 600; }
+  .odds-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .odds-american {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .odds-american.plus { color: var(--success); }
+  .odds-american.minus { color: var(--danger); }
+  .odds-ratio {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .col-divider { border-left: 2px solid var(--border); }
+  th.col-divider, td.col-divider { padding-left: 18px; }
+  .muted { color: var(--text-dim); font-style: italic; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:hover { border-color: var(--accent); background: #353766; }
+  .btn-block { width: 100%; justify-content: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Basketball Tournament Betting Odds Calculator</h1>
+  <div class="sub">9-team tournament • Calculates fair odds and book-adjusted offered odds</div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="section-title">Mode</div>
+    <div class="mode-toggle" id="modeToggle">
+      <button data-mode="rating" class="active">Team Rating (1-5)</button>
+      <button data-mode="percent">Win % (0-100)</button>
+    </div>
+    <div class="help" id="modeHelp" style="margin-top:8px;">
+      Rate each team 1 (worst) to 5 (best). Probabilities are normalized from the ratings.
+    </div>
+
+    <div class="section-title" style="margin-top:20px;">Book Edge</div>
+    <div class="control-group">
+      <label for="edgeInput">Edge factor (1.00 = fair, up to 3.00)</label>
+      <input id="edgeInput" type="number" min="1" max="3" step="0.01" value="1.10">
+      <div class="help">Fair payout is divided by this factor. e.g. fair +400 with edge 1.10 → ≈ +364.</div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px;">Actions</div>
+    <button class="btn btn-block" id="resetBtn">Reset Inputs</button>
+
+    <div id="totalContainer" style="display:none;">
+      <div class="section-title" style="margin-top:20px;">Running Total</div>
+      <div class="total-bar" id="totalBar">
+        <span>Total entered</span>
+        <strong id="totalValue">0.0%</strong>
+      </div>
+      <div class="total-message" id="totalMessage">
+        Total percentage is too high — must be ≤ 100%.
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="section-title">Team Inputs</div>
+    <div class="team-input-grid" id="teamInputs"></div>
+
+    <div class="section-title" style="margin-top:24px;">Betting Odds</div>
+    <div class="results-table-wrap">
+      <table class="results">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Input</th>
+            <th>Implied Win %</th>
+            <th class="col-divider">Fair Odds</th>
+            <th class="col-divider">Book Odds<br><span style="font-weight:400;text-transform:none;color:var(--text-dim);">(to nearest 0.1)</span></th>
+            <th>Book Odds<br><span style="font-weight:400;text-transform:none;color:var(--text-dim);">(rounded to nearest 0.5)</span></th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><strong style="color:var(--success);">+XXX</strong> = bet 100 to win XXX (underdog)</span>
+      <span><strong style="color:var(--danger);">-XXX</strong> = bet XXX to win 100 (favorite)</span>
+      <span>Ratio shown as bet:win.</span>
+    </div>
+  </main>
+</div>
+
+<script>
+  const TEAMS = [
+    'Team Perp',
+    'Team Goldin',
+    'Team Barnett',
+    'Team Pollans',
+    'Detroit Army',
+    'Team Gold',
+    'Team Deutsch',
+    'Team Snower',
+    'Team Eisenberg'
+  ];
+
+  const state = {
+    mode: 'rating', // 'rating' | 'percent'
+    edge: 1.10,
+    ratings: TEAMS.map(() => ''),   // strings so empty is allowed
+    percents: TEAMS.map(() => '')
+  };
+
+  // --- Rendering: team inputs ---
+  function renderTeamInputs() {
+    const wrap = document.getElementById('teamInputs');
+    wrap.innerHTML = '';
+    const values = state.mode === 'rating' ? state.ratings : state.percents;
+    const suffix = state.mode === 'rating' ? '' : '%';
+    const min = state.mode === 'rating' ? 1 : 0;
+    const max = state.mode === 'rating' ? 5 : 100;
+    const step = state.mode === 'rating' ? 0.1 : 0.1;
+
+    TEAMS.forEach((team, i) => {
+      const row = document.createElement('div');
+      row.className = 'team-input-row';
+      row.dataset.index = i;
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'team-name';
+      nameEl.textContent = team;
+
+      const inputWrap = document.createElement('div');
+      inputWrap.className = suffix ? 'input-suffix' : '';
+      if (suffix) inputWrap.dataset.suffix = suffix;
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = min;
+      input.max = max;
+      input.step = step;
+      input.value = values[i];
+      input.placeholder = state.mode === 'rating' ? '1-5' : '0-100';
+      input.addEventListener('input', (e) => {
+        const v = e.target.value;
+        if (state.mode === 'rating') state.ratings[i] = v;
+        else state.percents[i] = v;
+        update();
+      });
+
+      inputWrap.appendChild(input);
+      row.appendChild(nameEl);
+      row.appendChild(inputWrap);
+      wrap.appendChild(row);
+    });
+  }
+
+  // --- Probability calculation ---
+  function impliedProbabilities() {
+    // Returns array of probabilities (0-1) for each team. May not sum to 1.
+    if (state.mode === 'rating') {
+      const nums = state.ratings.map(v => {
+        const n = parseFloat(v);
+        return (isNaN(n) || n <= 0) ? 0 : n;
+      });
+      const sum = nums.reduce((a, b) => a + b, 0);
+      if (sum <= 0) return TEAMS.map(() => null);
+      return nums.map(n => n / sum);
+    } else {
+      // percent mode
+      return state.percents.map(v => {
+        const n = parseFloat(v);
+        if (isNaN(n) || n <= 0) return null;
+        return n / 100;
+      });
+    }
+  }
+
+  // --- Odds math ---
+  // p in (0, 1). Returns { payoutRatio, americanFromRatio, displayRatioStr }
+  function fairOdds(p) {
+    if (p == null || p <= 0 || p >= 1) return null;
+    const payoutRatio = (1 - p) / p; // win per 1 bet
+    return payoutRatio;
+  }
+
+  function americanFromRatio(r) {
+    if (r == null) return null;
+    if (r >= 1) return +100 * r;       // underdog, positive
+    return -100 / r;                    // favorite, negative
+  }
+
+  function formatRatio(r) {
+    if (r == null) return '—';
+    if (r >= 1) {
+      return `${r.toFixed(2)}:1`;
+    }
+    return `1:${(1 / r).toFixed(2)}`;
+  }
+
+  function formatAmerican(a) {
+    if (a == null) return '—';
+    const sign = a >= 0 ? '+' : '−';
+    return `${sign}${Math.abs(a).toFixed(1)}`;
+  }
+
+  // Round helper: round X (the variable side of the ratio) to a step
+  function roundTo(value, step) {
+    return Math.round(value / step) * step;
+  }
+
+  // Given a payout ratio r (after edge) and a step, produce a rounded ratio
+  // by rounding the "X" of either X:1 (r >= 1) or 1:X (r < 1).
+  function roundedRatioByStep(r, step) {
+    if (r == null) return null;
+    if (r >= 1) {
+      const rounded = roundTo(r, step);
+      return rounded; // still in payout-ratio form
+    } else {
+      const inv = 1 / r;
+      const roundedInv = roundTo(inv, step);
+      if (roundedInv <= 0) return null;
+      return 1 / roundedInv;
+    }
+  }
+
+  // --- Render results ---
+  function renderResults() {
+    const probs = impliedProbabilities();
+    const edge = Math.max(1, Math.min(3, parseFloat(state.edge) || 1));
+
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = '';
+
+    TEAMS.forEach((team, i) => {
+      const tr = document.createElement('tr');
+
+      // Team
+      const tdTeam = document.createElement('td');
+      tdTeam.className = 'team-cell';
+      tdTeam.textContent = team;
+      tr.appendChild(tdTeam);
+
+      // Input
+      const tdInput = document.createElement('td');
+      if (state.mode === 'rating') {
+        const v = parseFloat(state.ratings[i]);
+        tdInput.textContent = isNaN(v) ? '—' : v.toString();
+      } else {
+        const v = parseFloat(state.percents[i]);
+        tdInput.textContent = isNaN(v) ? '—' : `${v}%`;
+      }
+      tr.appendChild(tdInput);
+
+      const p = probs[i];
+
+      // Implied %
+      const tdProb = document.createElement('td');
+      tdProb.className = 'prob-cell';
+      tdProb.textContent = (p == null) ? '—' : `${(p * 100).toFixed(1)}%`;
+      tr.appendChild(tdProb);
+
+      // Fair odds
+      const tdFair = document.createElement('td');
+      tdFair.className = 'col-divider';
+      const fairR = fairOdds(p);
+      tdFair.appendChild(buildOddsCell(fairR));
+      tr.appendChild(tdFair);
+
+      // Book odds — to nearest 0.1
+      const tdBook01 = document.createElement('td');
+      tdBook01.className = 'col-divider';
+      const bookR = fairR == null ? null : fairR / edge;
+      const bookR01 = bookR == null ? null : roundedRatioByStep(bookR, 0.1);
+      tdBook01.appendChild(buildOddsCell(bookR01));
+      tr.appendChild(tdBook01);
+
+      // Book odds — to nearest 0.5
+      const tdBook05 = document.createElement('td');
+      const bookR05 = bookR == null ? null : roundedRatioByStep(bookR, 0.5);
+      tdBook05.appendChild(buildOddsCell(bookR05));
+      tr.appendChild(tdBook05);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildOddsCell(r) {
+    const wrap = document.createElement('div');
+    wrap.className = 'odds-pair';
+    if (r == null) {
+      const span = document.createElement('span');
+      span.className = 'muted';
+      span.textContent = '—';
+      wrap.appendChild(span);
+      return wrap;
+    }
+    const american = americanFromRatio(r);
+    const amEl = document.createElement('span');
+    amEl.className = 'odds-american ' + (american >= 0 ? 'plus' : 'minus');
+    amEl.textContent = formatAmerican(american);
+    const ratioEl = document.createElement('span');
+    ratioEl.className = 'odds-ratio';
+    ratioEl.textContent = formatRatio(r);
+    wrap.appendChild(amEl);
+    wrap.appendChild(ratioEl);
+    return wrap;
+  }
+
+  // --- Total / validation for percent mode ---
+  function updateTotalAndErrors() {
+    const totalContainer = document.getElementById('totalContainer');
+    const totalBar = document.getElementById('totalBar');
+    const totalValue = document.getElementById('totalValue');
+    const totalMessage = document.getElementById('totalMessage');
+
+    if (state.mode !== 'percent') {
+      totalContainer.style.display = 'none';
+      // Clear any error highlighting
+      document.querySelectorAll('.team-input-row').forEach(r => r.classList.remove('input-error'));
+      return;
+    }
+
+    totalContainer.style.display = '';
+    const nums = state.percents.map(v => {
+      const n = parseFloat(v);
+      return isNaN(n) ? 0 : n;
+    });
+    const total = nums.reduce((a, b) => a + b, 0);
+    totalValue.textContent = `${total.toFixed(1)}%`;
+
+    totalBar.classList.remove('over', 'exact');
+    totalMessage.classList.remove('show');
+
+    const EPS = 0.05;
+    if (total > 100 + EPS) {
+      totalBar.classList.add('over');
+      totalMessage.classList.add('show');
+      // Highlight all inputs red
+      document.querySelectorAll('.team-input-row').forEach((row) => {
+        const v = parseFloat(row.querySelector('input').value);
+        if (!isNaN(v) && v > 0) row.classList.add('input-error');
+        else row.classList.remove('input-error');
+      });
+    } else {
+      if (Math.abs(total - 100) <= EPS) totalBar.classList.add('exact');
+      document.querySelectorAll('.team-input-row').forEach(r => r.classList.remove('input-error'));
+    }
+  }
+
+  // --- Top-level update ---
+  function update() {
+    updateTotalAndErrors();
+    renderResults();
+  }
+
+  // --- Event wiring ---
+  document.getElementById('modeToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const mode = btn.dataset.mode;
+    if (mode === state.mode) return;
+    state.mode = mode;
+    document.querySelectorAll('#modeToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    document.getElementById('modeHelp').textContent =
+      mode === 'rating'
+        ? 'Rate each team 1 (worst) to 5 (best). Probabilities are normalized from the ratings.'
+        : 'Enter the win probability for each team. Total must not exceed 100%.';
+    renderTeamInputs();
+    update();
+  });
+
+  document.getElementById('edgeInput').addEventListener('input', (e) => {
+    let v = parseFloat(e.target.value);
+    if (isNaN(v)) v = 1;
+    state.edge = v;
+    renderResults();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    state.ratings = TEAMS.map(() => '');
+    state.percents = TEAMS.map(() => '');
+    renderTeamInputs();
+    update();
+  });
+
+  // --- Init ---
+  renderTeamInputs();
+  update();
+</script>
+</body>
+</html>
